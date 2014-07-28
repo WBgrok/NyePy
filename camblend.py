@@ -1,10 +1,8 @@
 #! /usr/bin/python
 
 ###########################
-#TODO
+# TODO
 # Sort out whitespace
-# log transparency?
-
 
 print "############################################################################"
 print "###  INITIALISATION SEQUENCE"
@@ -16,10 +14,12 @@ import pygame
 import pygame.image
 from pygame.locals import *
 print "INIT:: pygame packages import successful"
-
 from PIL import Image
 print "INIT:: PIL Image package import successful"
-##from time import sleep
+from time import sleep
+print "INIT:: time package import successsful"
+import resource
+print "INIT:: resource package import successful"
 
 
 ## CONSTANTS
@@ -27,14 +27,16 @@ print "INIT:: PIL Image package import successful"
 # This might be smaller than the resolution of the display device
 
 FULL_SCREEN = False
-FONT_SIZE = 20
+SHOW_LOAD = True
+FONT_SIZE = 40
 FONT_SPACING = 0.75
-TEXT_TRANSPARENCY = 100
+TEXT_TRANSPARENCY = 0
 TEXT_COLOUR = (0,200,0)
 
-SC_WIDTH  = 1024  ## Screen width
-SC_HEIGHT = 576  ## Screen height
-MIX_FAC   = 0.05 ## Mix factor
+SC_WIDTH  = 640  ## Screen width
+SC_HEIGHT = 480  ## Screen height
+MIX_FAC   = 0.30 ## Mix factor
+WAIT      = 5   ## wait duration in seconds
 print "INIT:: display resolution " + str(SC_WIDTH) + "x" + str(SC_HEIGHT)
 
 QUADRANTS = 1    ## 1 is a single image, 2 is 4 quadrants, 3 is 9. etc/
@@ -104,9 +106,17 @@ def make_pigame_img(pil_image):
 def blend(old, new):
     return Image.blend(old,new , MIX_FAC)
 
-# The file reads itself
-module = __import__(__name__)
-source = open(module.__file__)
+def graceful_exit():
+    # if we're here, we're quitting the program.
+    print ""
+    print "############################################################################"
+    print ""
+    print "####################### SHUTDOWN COMPLETE ##################################"
+    print ""
+    print "############################################################################"
+    pygame.display.quit()
+    pygame.quit()
+    exit(0)
 
 
 # new image object for our working image 
@@ -125,45 +135,51 @@ print "INIT:: first image up"
 working_image = current_image.copy()
 
 basicfont = pygame.font.SysFont(None,FONT_SIZE)
-l = 0 # line offset
 print "INIT:: font initialised"
 
 print "###  INITIALISATION COMPLETE"
 print "############################################################################"
 
+# get load stats
+mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+ucpu = resource.getrusage(resource.RUSAGE_SELF).ru_utime
+scpu = resource.getrusage(resource.RUSAGE_SELF).ru_stime
+
+
+print "###  INITIALISATION COMPLETE"
+print "###  LOAD: " + str(ucpu) + " - " + str(scpu) + " - " + str(mem)
+print "############################################################################"
 
 # Main Loop
 if __name__ == "__main__":
     _quit = False
     while not _quit:
+        print "###  LOAD: " + str(ucpu) + " - " + str(scpu) + " - " + str(mem)
+        sleep(1)
         # Handle interrupts (esc to quit)
         for e in pygame.event.get():
             if e.type is QUIT: _quit = True
             if e.type is KEYDOWN and e.key == K_ESCAPE: _quit = True
-        
+         
 
-        # print the source code
-        for i in range(N_LINES):
-            line = source.readline()
-            if line == "":
-                source.seek(0)
-            text = basicfont.render(line.rstrip(),False, TEXT_COLOUR)
-            text.set_alpha(TEXT_TRANSPARENCY)
-            text = pygame.transform.flip(text, True, False)
-            text_w = text.get_rect().width
-            
-##            print(line),
-            screen.blit(text,(quad_j * img_w + (img_w - text_w) ,(l +i) * FONT_SPACING * FONT_SIZE))
-            #render the buffer
-            pygame.display.flip()
-        l += N_LINES
-        if l >= SC_HEIGHT / FONT_SIZE: l = 0
-        
         # average and display the image
         current_image = get_img()
         working_image = blend(working_image, current_image)
         disp = make_pigame_img(working_image)
         screen.blit(disp,(quad_i * img_w ,quad_j * img_h))
+        sleep(WAIT)
+
+        # get load stats
+        if (SHOW_LOAD):
+            mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+	    ucpu = resource.getrusage(resource.RUSAGE_SELF).ru_utime
+            scpu = resource.getrusage(resource.RUSAGE_SELF).ru_stime
+	    stats = str(ucpu) + " - " + str(scpu) + " - " + str(mem)
+	    stext = basicfont.render(stats,False, TEXT_COLOUR)
+	    screen.blit(stext,(0,SC_HEIGHT - FONT_SIZE))
+
+        # Render the buffer to screen
+        pygame.display.flip()
 
         #move to the next quadrant
         quad_i += 1
@@ -172,18 +188,4 @@ if __name__ == "__main__":
             quad_j += 1
             if quad_j == QUADRANTS:
                 quad_j = 0
-            
-        
-
-# if we're here, we're quitting the program.
-print ""
-print "############################################################################"
-print ""
-print "####################### SHUTDOWN COMPLETE ##################################"
-print ""
-print "############################################################################"
-
-pygame.display.quit()
-pygame.quit()
-
-    
+graceful_exit()
