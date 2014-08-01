@@ -1,7 +1,9 @@
 NyePy
 =====
 
-Python code for Aug 2014 Installation by artist Nye Thompson (nyethompson.co.uk)
+Python code for Aug 2014 Installation SLURP! (http://slurp-show.tumblr.com/)  by artist Nye Thompson (nyethompson.co.uk)
+
+Runs 20 Aug - 14 Sep '14, London Canal Museum, 12-13 New Wharf Road, London N1 9RT
 
 Runs on a Raspberry with the Raspberry Pi Camera Module.
 
